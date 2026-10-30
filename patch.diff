@@ -1,0 +1,46 @@
+diff --git a/main.py b/main.py
+index 89e92ef..c605025 100644
+--- a/main.py
++++ b/main.py
+@@ -58,10 +58,8 @@ def login():
+     conn = sqlite3.connect(DB_NAME)
+     cursor = conn.cursor()
+ 
+-    query = f"SELECT id, username, role FROM users WHERE username = '{username}' AND password = '{password}'"
+-
+     try:
+-        cursor.execute(query)
++        cursor.execute("SELECT id, username, role FROM users WHERE username = ? AND password = ?", (username, password))
+         user = cursor.fetchone()
+         conn.close()
+ 
+@@ -84,16 +82,19 @@ def view_file():
+     if not filename:
+         return jsonify({"status": "error", "message": "The file parameter is required."}), 400
+ 
+-    file_path = os.path.join("reports", filename)
+-
+-    try:
+-        with open(file_path, "r", encoding="utf-8") as f:
+-            content = f.read()
+-        return jsonify({"status": "success", "filename": filename, "content": content}), 200
+-    except FileNotFoundError:
+-        return jsonify({"status": "error", "message": "Файл не найден"}), 404
+-    except Exception as e:
+-        return jsonify({"status": "error", "message": str(e)}), 500
++    file_path = os.path.abspath(os.path.join("reports", filename))
++    base = os.path.abspath("reports")
++    if os.path.commonpath([base, file_path]) != base or file_path == base:
++        return jsonify({"status": "error", "message": "There is no such file."}), 403
++    else:
++        try:
++            with open(file_path, "r", encoding="utf-8") as f:
++                content = f.read()
++            return jsonify({"status": "success", "filename": filename, "content": content}), 200
++        except FileNotFoundError:
++            return jsonify({"status": "error", "message": "Файл не найден"}), 404
++        except Exception as e:
++            return jsonify({"status": "error", "message": str(e)}), 500
+ 
+ 
+ if __name__ == '__main__':
